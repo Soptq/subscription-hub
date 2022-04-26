@@ -10,7 +10,7 @@ import ServiceAction from "./components/ServiceAction";
 import UserAction from "./components/UserAction";
 import {Card, StyledBody} from 'baseui/card';
 import HubConfigurationTable from "./components/Dashboard";
-import {ParagraphLarge} from "baseui/typography";
+import {ParagraphLarge, ParagraphSmall} from "baseui/typography";
 
 
 function App() {
@@ -47,6 +47,7 @@ function App() {
                     </Tab>
                 </StatefulTabs>
                 <div style={{marginTop: 200, marginBottom: 200}}/>
+                <ParagraphSmall>Github Repo: https://github.com/Soptq/subscription-hub</ParagraphSmall>
           </HeadingLevel>
       </Block>
   );
