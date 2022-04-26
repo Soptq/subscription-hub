@@ -6,6 +6,7 @@ import ServiceUnclaimed from "./service/ServiceUnclaimed";
 import ServiceUnregister from "./service/ServiceUnregister";
 import ServiceClaim from "./service/ServiceClaim";
 import ServiceCheckSubscription from "./service/ServiceCheckSubscription";
+import ServiceGetServices from "./service/ServiceGetServices";
 
 function ServiceAction() {
     return (
@@ -14,6 +15,7 @@ function ServiceAction() {
                 In this section, you can register your own subscription plan to the contract. If there are people subscribing your plan, you can charge fees and provide services based on the subscription plan.
             </ParagraphMedium>
             <ServiceRegister />
+            <ServiceGetServices />
             <ServiceSubscriptionsCount />
             <ServiceCheckSubscription />
             <ServiceUnclaimed />

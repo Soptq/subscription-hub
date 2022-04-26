@@ -15,12 +15,13 @@ import { ethers, providers, Contract } from "ethers"
 import SubscriptionHubABI from "../artifacts/contracts/SubscriptionHub.sol/SubscriptionHub.json";
 
 function Configuration(props) {
-    const [configurationStep, setConfigurationStep] = useState(0);
+    const { context, setContext } = useContext(Context);
+
+    const [configurationStep, setConfigurationStep] = useState(context.configured ? 2 : 0);
     const [connecting, setConnecting] = useState(false);
-    const [contractAddress, setContractAddress] = useState("");
+    const [contractAddress, setContractAddress] = useState("0x6fF7C7AA3E61Cc657BF996a0F68aA53736F0eBc4");
     const [confirming, setconfirming] = useState(false);
 
-    const { context, setContext } = useContext(Context);
     const { enqueue } = useSnackbar();
     const [css] = useStyletron();
 
@@ -134,7 +135,7 @@ function Configuration(props) {
                     ) : (
                         <>
                             <ParagraphMedium>
-                                Before actually using the application, you need to connect your wallet first.
+                                Before actually using the application, you need to connect your wallet first. This application is deployed to the <strong>BSC Testnet</strong>.
                             </ParagraphMedium>
                             <Button size="compact" onClick={connectWallet}>
                                 Connect with Metamask
@@ -144,7 +145,7 @@ function Configuration(props) {
                 </Step>
                 <Step title="Input Deployed SubscriptionHub Contract Address">
                     <ParagraphMedium>
-                        Here please input the deployed SubscriptionHub contract address.
+                        Here please input the deployed SubscriptionHub contract address. For demonstration, we have a pre-deployed SubscriptionHub contract on BSC Testnet for you: <strong>0x6fF7C7AA3E61Cc657BF996a0F68aA53736F0eBc4</strong>. This hub is configured to have 25% fee percentage, 5 minutes interval (So every subscriber will be charged every 5 minutes, traditionally this is usually set to 1 month). Note that in production we will have multiple contracts with different intervals deployed for more use cases (i.e. 1 month, 3 month, 6 month, 1 year, etc.)
                     </ParagraphMedium>
                     <Input
                         value={contractAddress}
@@ -166,6 +167,14 @@ function Configuration(props) {
                     )}
                 </Step>
             </ProgressSteps>
+            {context.configured && (
+                <>
+                    <div style={{marginTop: 16, marginBottom: 16}}/>
+                    <ParagraphMedium>
+                        You have successfully configured the application. You can now use the application. Please go back to the top of the page to check <strong>Service</strong> section and <strong>User</strong> section.
+                    </ParagraphMedium>
+                </>
+            )}
         </HeadingLevel>
     )
 }

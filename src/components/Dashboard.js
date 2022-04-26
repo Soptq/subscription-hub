@@ -7,8 +7,10 @@ import {
 import { Heading, HeadingLevel } from 'baseui/heading'
 
 import {Context} from "../Context";
-import {DisplayXSmall, ParagraphSmall} from "baseui/typography";
+import {MonoDisplayXSmall, ParagraphSmall} from "baseui/typography";
 import {Card} from "baseui/card";
+import {Avatar} from "baseui/avatar";
+import {expandBorderStyles} from "baseui/styles";
 
 function Dashboard() {
     const [css] = useStyletron();
@@ -64,11 +66,27 @@ function Dashboard() {
                     <ParagraphSmall><strong>Payment Interval (Blocks)</strong>: How many blocks between two payments, i.e. the subscription period.</ParagraphSmall>
                     <ParagraphSmall><strong># Services</strong>: How many services registered to the contract.</ParagraphSmall>
                     <ParagraphSmall><strong># Subscriptions</strong>: How many subscriptions registered to the contract.</ParagraphSmall>
-                    <ParagraphSmall> Current Block is:
-                        <DisplayXSmall>
-                            {currentBlock.toString()}
-                        </DisplayXSmall>
-                    </ParagraphSmall>
+                    <div style={{marginLeft: 32}} className={css({display: 'flex', alignItems: 'center'})}>
+                        <Avatar
+                            overrides={{
+                                Root: {
+                                    style: ({$theme}) => ({
+                                        ...expandBorderStyles($theme.borders.border600),
+                                    }),
+                                },
+                            }}
+                            name={context.walletAddress ? context.walletAddress : ""}
+                            size="scale1600"
+                            src={`https://identicon-api.herokuapp.com/${context.walletAddress}/256?format=png`}
+                        />
+                        <div style={{marginLeft: 32, marginBottom: 12}}>
+                            <ParagraphSmall style={{marginBottom: -2}}> {context.walletAddress} </ParagraphSmall>
+                            <ParagraphSmall style={{marginTop: -2}}> Current Block is:</ParagraphSmall>
+                            <MonoDisplayXSmall style={{marginLeft: 128, marginTop: -32}}>
+                                {currentBlock.toString()}
+                            </MonoDisplayXSmall>
+                        </div>
+                    </div>
                 </HeadingLevel>
             </Card>
     )

@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
-import "./KeeperRegistryInterface.sol";
-import "hardhat/console.sol";
 
 contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     using Address for address;
@@ -58,6 +56,7 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     mapping (bytes32 => bool) private _registeredServicesAlive;                                 // hash => alive;
 
     mapping (bytes32 => DeletableArrayAddress) private _subscriptions;                          // hash => payer;
+    mapping (address => bytes32[]) private _userServices;                                       // user => hash;
     mapping (bytes32 => DeletableMappingAddressUint256) private _indexOfAddressInService;       // hash => (payer => index);
     mapping (bytes32 => DeletableMappingAddressBool) private _subscribed;                       // hash => (address => isSubscribed);
     mapping (bytes32 => DeletableMappingAddressBool) private _renewal;                          // hash => (address => needRenewal);
@@ -108,9 +107,9 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     // `hash` is ensured to be existed in `_registeredServices` before calling this function;
     function _unregisterService(bytes32 hash) private {
         _subscriptionCount -= _registeredServices[hash].count;
+        delete _userServices[_registeredServices[hash].proposer];
         delete _registeredServices[hash];
         _registeredServicesAlive[hash] = false;
-
         _deletableVersion[hash]++;
     }
 
@@ -119,6 +118,7 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         bytes32 hash = _getKeccakOfServices(service);
         _registeredServices[hash] = service;
         _registeredServicesAlive[hash] = true;
+        _userServices[service.proposer].push(hash);
     }
 
     // a user `payer` subscribe a service `serviceHash`, the subscription will take effect immediately;
@@ -383,6 +383,10 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         uint256 version = _deletableVersion[serviceHash];
         require(_subscribed[serviceHash].data[version][payer], "Sender have not subscribed this service.");
         return _nextPaymentBlock[serviceHash].data[version][payer];
+    }
+
+    function getServices(address proposer) external view returns (bytes32[] memory serviceHashes) {
+        serviceHashes = _userServices[proposer];
     }
 
     function getSubscriptions(address payer) external view returns (UserSubscription[] memory subscriptions) {

@@ -1,5 +1,6 @@
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
+import {deployKey} from "./secret"
 
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -34,14 +35,8 @@ module.exports = {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
       gasPrice: 20000000000,
-      // accounts: { mnemonic: mnemonic }
+      accounts: [deployKey] // this is a test account, do NOT save funds in this account!
     },
-    mainnet: {
-      url: "https://bsc-dataseed.binance.org/",
-      chainId: 56,
-      gasPrice: 20000000000,
-      // accounts: { mnemonic: mnemonic }
-    }
   },
   solidity: {
     version: "0.8.4",

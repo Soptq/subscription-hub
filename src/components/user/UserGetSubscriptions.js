@@ -9,7 +9,7 @@ import {Context} from "../../Context";
 import {StatefulDataTable, StringColumn} from "baseui/data-table";
 import {useStyletron} from "baseui";
 
-function UserGetConfig() {
+function UserGetSubscriptions() {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -55,7 +55,7 @@ function UserGetConfig() {
 
     return (
         <HeadingLevel>
-            <Heading>All subscriptions</Heading>
+            <Heading>All Subscriptions</Heading>
             <ParagraphSmall>Here you can view all your subscribed services.</ParagraphSmall>
             <div style={{marginTop: 8, marginBottom: 8}}/>
             <Button size="compact" isLoading={loading} onClick={getSubscriptions}>
@@ -69,4 +69,4 @@ function UserGetConfig() {
     )
 }
 
-export default UserGetConfig;
+export default UserGetSubscriptions;

@@ -81,7 +81,7 @@ function ServiceRegister() {
     return (
         <HeadingLevel>
             <Heading>Register Your Service</Heading>
-            <ParagraphSmall>Here by providing the following parameters, you can register your own service to the contract.</ParagraphSmall>
+            <ParagraphSmall>Here by providing the following parameters, you can register your own service to the contract. Regarding to the token address field, you can, for example, input 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee if your service want to take BUSD (BSC Testnet). You can fund your subscriber with some test BUSD or other tokens at https://testnet.binance.org/faucet-smart.</ParagraphSmall>
             <Input
                 value={receiver}
                 onChange={e => setReceiver(e.currentTarget.value)}
