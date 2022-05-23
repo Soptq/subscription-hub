@@ -68,6 +68,8 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
 
     mapping (bytes32 => uint256) private _deletableVersion;
 
+    mapping (address => bool) private _entrance;
+
     // store all pending payments;
     mapping (uint256 => PendingPayment[]) private _pendingPayments;                             // block number => pending payment;
     mapping (uint256 => bool) private _hasPendingPayments;                                      // block number => alive;
@@ -96,6 +98,15 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         _paymentInterval = paymentInterval;
         _slidingWindowSize = slidingWindowSize;
         _targetPendingPaymentsPerBlock = targetPendingPaymentsPerBlock;
+    }
+
+    function _entranceLock() private {
+        require(!_entrance[msg.sender], "Re entrance is not allowed.");
+        _entrance[msg.sender] = true;
+    }
+
+    function _entranceUnlock() private {
+        _entrance[msg.sender] = false;
     }
 
     // get the hash of a service, as the identity of this service;
@@ -354,12 +365,14 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     }
 
     function claimToken(bytes32 serviceHash) external returns (bool isSuccess) {
+        _entranceLock();
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
         require(msg.sender == _registeredServices[serviceHash].proposer, "Only the proposer can claim the token.");
         RegisteredServices memory service = _registeredServices[serviceHash];
         require(service.unclaimed > 0, "No unclaimed token.");
 
         isSuccess = _claimToken(service, serviceHash);
+        _entranceUnlock();
     }
 
     function checkSubscribed(address payer, bytes32 serviceHash, uint256 version) external view returns (bool isSubscribed) {
@@ -407,6 +420,7 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     }
 
     function registerService(address receiver, address tokenAddress, uint256 amount) external returns (bytes32 serviceHash) {
+        _entranceLock();
         // ensure this service is not existed;
         RegisteredServices memory service = RegisteredServices({
             proposer: msg.sender,
@@ -424,10 +438,12 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         // update service version;
         _registeredServices[serviceHash].version = _deletableVersion[serviceHash];
         _serviceCount++;
+        _entranceUnlock();
         emit ServiceRegistered(msg.sender, block.number, _deletableVersion[serviceHash], serviceHash);
     }
 
     function unregisterService(bytes32 serviceHash) external returns (bool isSuccessful){
+        _entranceLock();
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
         require(msg.sender == _registeredServices[serviceHash].proposer, "Sender is not the original proposer of the service.");
         RegisteredServices memory service = _registeredServices[serviceHash];
@@ -441,9 +457,11 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         if (isSuccessful) {
             _serviceCount--;
         }
+        _entranceUnlock();
     }
 
     function subscribeService(bytes32 serviceHash, bool renewal, bytes calldata signature) external {
+        _entranceLock();
         // ensure this service is registered;
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
         // ensure this user is not subscribed this service;
@@ -477,9 +495,11 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
 
         _registeredServices[serviceHash].count++;
         _subscriptionCount++;
+        _entranceUnlock();
     }
 
     function unsubscribeService(bytes32 serviceHash, bytes calldata signature) external {
+        _entranceLock();
         // ensure this service is registered;
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
         // ensure this user is subscribed this service;
@@ -490,6 +510,7 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         require(_verify(msgHash, signature, msg.sender), "Signature is invalid.");
 
         _pretend_unsubscribe(msg.sender, serviceHash);
+        _entranceUnlock();
     }
 
     // chainlink keeper checker
@@ -513,11 +534,13 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
 
     // chainlink keeper executor
     function performUpkeep(bytes calldata /* performData */) external override {
+        _entranceLock();
         require(_pendingPaymentBlockNumbers.length != 0, "No pending payments.");
         require(_pendingPaymentBlockNumbers.length > _processIndex, "No more pending payments.");
         require(block.number >= _pendingPaymentBlockNumbers[_processIndex], "Pending payments are not matured.");
 
         _processPendingPayments();
+        _entranceUnlock();
     }
 
     function getPendingPaymentCount(uint256 blockNum) external onlyOwner view returns (uint256 pendingPaymentCount) {

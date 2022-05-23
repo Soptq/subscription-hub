@@ -11,6 +11,7 @@ import UserAction from "./components/UserAction";
 import {Card, StyledBody} from 'baseui/card';
 import HubConfigurationTable from "./components/Dashboard";
 import {ParagraphLarge, ParagraphSmall} from "baseui/typography";
+import {Button} from "baseui/button";
 
 
 function App() {
@@ -27,6 +28,14 @@ function App() {
                   Subscription Hub
                 </Heading>
                 <ParagraphLarge>Manage all your subscriptions on Web3 in one place.</ParagraphLarge>
+                <Button size="compact" onClick={() => {
+                    window.open(
+                        `https://staging-global.transak.com/?apiKey=${process.env.REACT_APP_TRANSAK_API_KEY}`,
+                        '_blank'
+                    ).focus()
+                }}>
+                    Purchase Some Tokens (Currently it is only for testing)
+                </Button>
                 <StatefulTabs>
                     <Tab title="Configuration">
                         <Card>
