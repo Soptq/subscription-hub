@@ -18,7 +18,9 @@
   "dependencies": {
     "@chainlink/contracts": "^0.4.0",
     "@openzeppelin/contracts": "^4.5.0",
+    "@unstoppabledomains/resolution": "^8.3.1",
     "baseui": "^11.0.0",
+    "lodash": "^4.17.21",
     "styletron-engine-atomic": "^1.4.8",
     "styletron-react": "^6.0.2"
   },

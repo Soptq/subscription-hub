@@ -1,14 +1,17 @@
 import { Heading, HeadingLevel } from 'baseui/heading'
 import {ParagraphSmall} from 'baseui/typography';
 import {Input, SIZE} from "baseui/input";
-import {useContext, useState} from "react";
+import {useContext, useState, useCallback, useEffect} from "react";
 import {Button} from "baseui/button";
 
 import {ethers} from "ethers";
 import {useSnackbar} from "baseui/snackbar";
 import {Context} from "../../Context";
 import {Tag, VARIANT} from 'baseui/tag';
+import { debounce } from "lodash";
+
 const variants = Object.keys(VARIANT);
+const { default: Resolution } = require('@unstoppabledomains/resolution');
 
 function ServiceCheckSubscription() {
     const [address, setAddress] = useState("");
@@ -20,6 +23,26 @@ function ServiceCheckSubscription() {
 
     const { context } = useContext(Context);
     const { enqueue } = useSnackbar();
+
+    const udResolution = new Resolution();
+    const supportedUDDomains = [".zil", ".crypto", ".nft", ".blockchain", ".bitcoin", "coin", "wallet", ".888", ".dao", ".x"]
+
+    const debouncedDomainLookup = useCallback(debounce((value, setFn) => {
+        if (supportedUDDomains.some(postfix => value.endsWith(postfix))) {
+            // try resolve ud domain
+            udResolution.addr(value, "ETH")
+                .then((address) => setFn(address))
+                .catch(e => {
+                    console.warn("Failed to resolve a possible UD domain", e)
+                });
+        }
+    }, 1000), [])
+
+    useEffect(() => {
+        return () => {
+            debouncedDomainLookup.cancel();
+        }
+    }, []);
 
     const checkSubscription = async () => {
         setLoading(true);
@@ -59,7 +82,10 @@ function ServiceCheckSubscription() {
             <div style={{marginTop: 8, marginBottom: 8}}/>
             <Input
                 value={address}
-                onChange={e => setAddress(e.currentTarget.value)}
+                onChange={e => {
+                    debouncedDomainLookup(e.currentTarget.value, setAddress);
+                    setAddress(e.currentTarget.value)
+                }}
                 size={SIZE.compact}
                 placeholder="user wallet address"
                 clearOnEscape
