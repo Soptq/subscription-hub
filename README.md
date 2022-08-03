@@ -1,8 +1,14 @@
 # Subscription Hub
 
-Live site: https://subscription-hub.vercel.app
+## Update
 
-Youtube Demo: https://youtu.be/7PekjBfmZ9k
+In this branch (feat-ud-resolution) this application is integrated with Unstoppable Domain resolution.
+
+Youtube Demo: https://youtu.be/euiSQS9By_c
+
+Live version: https://subscription-1ixl9of1i-soptq.vercel.app/
+
+Contact me: Discord handle: Soptq#9775 UD Email: aplenty$dot$brier-0i$at$icloud$dot$com
 
 ## Introduction
 
