@@ -9,6 +9,9 @@ import { LightTheme, BaseProvider, styled } from 'baseui';
 import { SnackbarProvider } from "baseui/snackbar";
 import { ContextProvider} from "./Context";
 
+import { Web3ReactProvider } from '@web3-react/core'
+import { Web3Provider } from "@ethersproject/providers";
+
 const engine = new Styletron();
 
 const Centered = styled('div', {
@@ -18,6 +21,10 @@ const Centered = styled('div', {
     height: '100%',
 });
 
+function getLibrary(provider) {
+    return new Web3Provider(provider);
+}
+
 ReactDOM.render(
     <React.StrictMode>
         <StyletronProvider value={engine}>
@@ -25,7 +32,9 @@ ReactDOM.render(
                 <SnackbarProvider>
                     <Centered>
                         <ContextProvider>
-                            <App />
+                            <Web3ReactProvider getLibrary={getLibrary}>
+                                <App />
+                            </Web3ReactProvider>
                         </ContextProvider>
                     </Centered>
                 </SnackbarProvider>

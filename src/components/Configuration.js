@@ -13,6 +13,31 @@ import { Context } from "../Context";
 
 import { ethers, providers, Contract } from "ethers"
 import SubscriptionHubABI from "../artifacts/contracts/SubscriptionHub.sol/SubscriptionHub.json";
+import udLOGO from '../imgs/ud.png';
+
+import {useWeb3React} from '@web3-react/core';
+import {UAuthConnector} from '@uauth/web3-react';
+import {InjectedConnector} from '@web3-react/injected-connector';
+import {WalletConnectConnector} from '@web3-react/walletconnect-connector';
+import UAuth from '@uauth/js';
+
+const networkChainIdDecimal = 97; // BSC Testnet
+
+const injected = new InjectedConnector({supportedChainIds: [networkChainIdDecimal]})
+
+const walletconnect = new WalletConnectConnector({
+    infuraId: process.env.REACT_APP_INFURA_ID,
+    qrcode: true,
+})
+
+const uauth = new UAuthConnector({
+    uauth: new UAuth({
+        clientID: process.env.REACT_APP_CLIENT_ID,
+        redirectUri: process.env.REACT_APP_REDIRECT_URI,
+        scope: 'openid wallet',
+    }),
+    connectors: {injected, walletconnect},
+})
 
 function Configuration(props) {
     const { context, setContext } = useContext(Context);
@@ -24,6 +49,8 @@ function Configuration(props) {
 
     const { enqueue } = useSnackbar();
     const [css] = useStyletron();
+
+    const { activate } = useWeb3React()
 
     const connectWallet = async () => {
         if (context.connected) {
@@ -51,6 +78,22 @@ function Configuration(props) {
         updatedContext.connected = true;
         updatedContext.walletAddress = address;
         updatedContext.provider = _provider;
+        setContext(updatedContext);
+        setConnecting(false);
+        enqueue({
+            message: 'Wallet connected!',
+        })
+    }
+
+    const connectUD = async () => {
+        setConnecting(true);
+        await activate(uauth);
+        const provider = await uauth._subConnector.getProvider();
+        const address = await uauth._subConnector.getAccount();
+        const updatedContext = context;
+        updatedContext.connected = true;
+        updatedContext.walletAddress = address;
+        updatedContext.provider = provider;
         setContext(updatedContext);
         setConnecting(false);
         enqueue({
@@ -137,9 +180,39 @@ function Configuration(props) {
                             <ParagraphMedium>
                                 Before actually using the application, you need to connect your wallet first. This application is deployed to the <strong>BSC Testnet</strong>.
                             </ParagraphMedium>
-                            <Button size="compact" onClick={connectWallet}>
-                                Connect with Metamask
-                            </Button>
+                            <div>
+                                <Button size="compact" onClick={connectWallet}>
+                                    Connect with Metamask
+                                </Button>
+                                <Button
+                                    overrides={{
+                                        BaseButton: {
+                                            style: ({ $theme }) => ({
+                                                marginLeft: "10px",
+                                                background: "rgb(75, 71, 238)",
+                                                ":hover": {
+                                                    background: "rgb(11, 36, 179)",
+                                                    color: "white",
+                                                },
+                                                ":active": {
+                                                    background: "rgb(83, 97, 199)",
+                                                    color: "white",
+                                                }
+                                            })
+                                        }
+                                    }}
+                                    onClick={connectUD}
+                                    size="compact"
+                                    startEnhancer={
+                                        <img style={{height: "10px", display: "inline-block", verticalAlign: "middle"}}
+                                             src={udLOGO}
+                                             alt="UnstoppableDomain Logo"
+                                        />
+                                    }
+                                >
+                                    Login with Unstoppable
+                                </Button>
+                            </div>
                         </>
                     )}
                 </Step>
