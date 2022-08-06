@@ -6,7 +6,7 @@ In this branch (feat-ud-resolution) this application is integrated with Unstoppa
 
 Youtube Demo: https://youtu.be/euiSQS9By_c
 
-Live version: ud-res-subscription-hub.vercel.app
+Live version: https://ud-res-subscription-hub.vercel.app/
 
 Contact me: Discord handle: Soptq#9775 UD Email: aplenty$dot$brier-0i$at$icloud$dot$com
 
