@@ -19,6 +19,7 @@ In a nutshell, Subscription Hub allows service providers to have full control of
 1. **Task Scheduling Algorithm**: As the contract is responsible for periodically charing subscribers, it is crucial to efficiently pre-schedule these periodical charging tasks so that they are neither stacked together in the same block to run out of the block gas limit, nor scattered and therefore makes the gas inefficient to use. It is ideal that all tasks are well-scheduled so that every block that contains tasks, contains averagely N tasks, where N is configurable. Note that this tasks scheduling algorithm must also be efficient enough.
 2. **Corner Cases**: There are many corner cases during the life time of the subscription: What if the subscriber has insufficient balance to pay for the next subscription period; What if the subscriber decides to unsubscribe during one subscription period, does the subscription period expires immediately or lasts until the end of current period; What will happen to subscribers if their subscription plan is terminated by the service provider.
 3. **Safety**: Due to the nature of the subscription business model and ERC20 token, the contract needs to get approved for transferring users tokens for paying the subscriptions. To minimize the attack surface, the token transferring related codes must be protected seriously.
+4. **Gasless Transaction**: Thanks to Biconomy, service provider can register their services gaslessly.
 
 ## Get Started
 ### Installation
