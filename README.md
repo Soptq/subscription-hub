@@ -1,9 +1,5 @@
 # Subscription Hub
 
-Live site: https://subscription-hub.vercel.app
-
-Youtube Demo: https://youtu.be/7PekjBfmZ9k
-
 ## Introduction
 
 Compared to selling products individually, Subscriptions offer periodic uses and accesses to products, which could effectively help developers gain continues revenue to keep developing, and at the same time save money for users if they are not actively using. This business model contributes to a win-win situation for both customers and providers.
