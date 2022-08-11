@@ -1,15 +1,28 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
 
-contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
+import "./ERC2771Recipient.sol";
+
+contract SubscriptionHub is KeeperCompatibleInterface, Ownable, ERC2771Recipient {
     using Address for address;
     using ECDSA for bytes32;
+
+    string public override versionRecipient = "v0.0.1";
+
+    function _msgSender() internal override (Context, ERC2771Recipient) view returns (address) {
+        return ERC2771Recipient._msgSender();
+    }
+
+    function _msgData() internal override (Context, ERC2771Recipient) view returns (bytes calldata) {
+        return ERC2771Recipient._msgData();
+    }
 
     // events
     event ServiceRegistered(address proposer, uint256 blockNumber, uint256 version, bytes32 serviceHash);
@@ -89,7 +102,8 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     // ========================================= PRIVATE FUNCTION ======================================
 
     constructor(uint256 feePercentage, uint256 paymentInterval,
-        uint256 slidingWindowSize, uint256 targetPendingPaymentsPerBlock)
+        uint256 slidingWindowSize, uint256 targetPendingPaymentsPerBlock,
+        address forwarder)
     Ownable() {
         if (feePercentage > 100) {
             revert("Fee must be less than 100");
@@ -98,15 +112,17 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         _paymentInterval = paymentInterval;
         _slidingWindowSize = slidingWindowSize;
         _targetPendingPaymentsPerBlock = targetPendingPaymentsPerBlock;
+
+        _setTrustedForwarder(forwarder);
     }
 
     function _entranceLock() private {
-        require(!_entrance[msg.sender], "Re entrance is not allowed.");
-        _entrance[msg.sender] = true;
+        require(!_entrance[_msgSender()], "Re entrance is not allowed.");
+        _entrance[_msgSender()] = true;
     }
 
     function _entranceUnlock() private {
-        _entrance[msg.sender] = false;
+        _entrance[_msgSender()] = false;
     }
 
     // get the hash of a service, as the identity of this service;
@@ -367,7 +383,7 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
     function claimToken(bytes32 serviceHash) external returns (bool isSuccess) {
         _entranceLock();
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
-        require(msg.sender == _registeredServices[serviceHash].proposer, "Only the proposer can claim the token.");
+        require(_msgSender() == _registeredServices[serviceHash].proposer, "Only the proposer can claim the token.");
         RegisteredServices memory service = _registeredServices[serviceHash];
         require(service.unclaimed > 0, "No unclaimed token.");
 
@@ -423,7 +439,7 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         _entranceLock();
         // ensure this service is not existed;
         RegisteredServices memory service = RegisteredServices({
-            proposer: msg.sender,
+            proposer: _msgSender(),
             receiver: receiver,
             tokenAddress: tokenAddress,
             amount: amount,
@@ -439,13 +455,13 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         _registeredServices[serviceHash].version = _deletableVersion[serviceHash];
         _serviceCount++;
         _entranceUnlock();
-        emit ServiceRegistered(msg.sender, block.number, _deletableVersion[serviceHash], serviceHash);
+        emit ServiceRegistered(_msgSender(), block.number, _deletableVersion[serviceHash], serviceHash);
     }
 
     function unregisterService(bytes32 serviceHash) external returns (bool isSuccessful){
         _entranceLock();
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
-        require(msg.sender == _registeredServices[serviceHash].proposer, "Sender is not the original proposer of the service.");
+        require(_msgSender() == _registeredServices[serviceHash].proposer, "Sender is not the original proposer of the service.");
         RegisteredServices memory service = _registeredServices[serviceHash];
 
         if (service.unclaimed > 0) {
@@ -466,31 +482,31 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
         // ensure this user is not subscribed this service;
         uint256 version = _deletableVersion[serviceHash];
-        bool hasSubscribed = _subscribed[serviceHash].data[version][msg.sender];
-        bool hasRenewal = _renewal[serviceHash].data[version][msg.sender];
+        bool hasSubscribed = _subscribed[serviceHash].data[version][_msgSender()];
+        bool hasRenewal = _renewal[serviceHash].data[version][_msgSender()];
         if (hasSubscribed && hasRenewal) {
             revert("Sender have already subscribed this service with renewal.");
         }
 
-        // check signature: `msg.sender` grants `proposer` the right to pay `amount` of `tokenAddress` to `receiver`;
-        bytes32 msgHash = keccak256(abi.encodePacked(msg.sender, serviceHash, version));
-        require(_verify(msgHash, signature, msg.sender), "Signature is not invalid.");
+        // check signature: `_msgSender()` grants `proposer` the right to pay `amount` of `tokenAddress` to `receiver`;
+        bytes32 msgHash = keccak256(abi.encodePacked(_msgSender(), serviceHash, version));
+        require(_verify(msgHash, signature, _msgSender()), "Signature is not invalid.");
 
         if (hasSubscribed && !hasRenewal) {
             if (renewal) {
                 // recover renewal
-                _renewal[serviceHash].data[version][msg.sender] = true;
+                _renewal[serviceHash].data[version][_msgSender()] = true;
             }
         } else {
             // fresh subscription
             RegisteredServices memory service = _registeredServices[serviceHash];
             // pay for the first time
-            bool paySuccessfully = _paySubscription(msg.sender, service.tokenAddress, service.amount, serviceHash);
+            bool paySuccessfully = _paySubscription(_msgSender(), service.tokenAddress, service.amount, serviceHash);
             if (!paySuccessfully) {
                 revert("Payment Failed. Please check token balance or token allowance.");
             }
             // subscribe this service;
-            _subscribe(msg.sender, renewal, serviceHash);
+            _subscribe(_msgSender(), renewal, serviceHash);
         }
 
         _registeredServices[serviceHash].count++;
@@ -504,12 +520,12 @@ contract SubscriptionHub is KeeperCompatibleInterface, Ownable {
         require(_registeredServicesAlive[serviceHash], "This service is not registered.");
         // ensure this user is subscribed this service;
         uint256 version = _deletableVersion[serviceHash];
-        require(_subscribed[serviceHash].data[version][msg.sender], "Sender have not subscribed this service.");
-        // check signature: `msg.sender` grants `proposer` the right to unsubscribe `receiver` from `serviceHash`;
-        bytes32 msgHash = keccak256(abi.encodePacked(msg.sender, serviceHash, version));
-        require(_verify(msgHash, signature, msg.sender), "Signature is invalid.");
+        require(_subscribed[serviceHash].data[version][_msgSender()], "Sender have not subscribed this service.");
+        // check signature: `_msgSender()` grants `proposer` the right to unsubscribe `receiver` from `serviceHash`;
+        bytes32 msgHash = keccak256(abi.encodePacked(_msgSender(), serviceHash, version));
+        require(_verify(msgHash, signature, _msgSender()), "Signature is invalid.");
 
-        _pretend_unsubscribe(msg.sender, serviceHash);
+        _pretend_unsubscribe(_msgSender(), serviceHash);
         _entranceUnlock();
     }
 

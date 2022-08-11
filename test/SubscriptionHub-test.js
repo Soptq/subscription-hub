@@ -27,6 +27,7 @@ describe("SubscriptionHub", function () {
   const serviceRegisterId = 1;
   const subscriberId = 2;
   const tokenReceiverId = 3;
+  const forwarderId = 4;
 
   // default service configuration;
   let tokenAddress = "0x0000000000000000000000000000000000000000";
@@ -55,10 +56,11 @@ describe("SubscriptionHub", function () {
   it("Should successfully deploy SubscriptionHub", async function() {
     const signers = await ethers.getSigners();
     const deployer = signers[deployerId];
+    const trustedForwarder = signers[forwarderId];
 
     const SubscriptionHub = await ethers.getContractFactory("SubscriptionHub");
     const subscriptionHub = await SubscriptionHub.connect(deployer)
-        .deploy(feePercentage, interval, 10, 10);
+        .deploy(feePercentage, interval, 10, 10, trustedForwarder.address);
     await subscriptionHub.deployed();
 
     contract = subscriptionHub

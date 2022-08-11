@@ -20,8 +20,9 @@ function ServiceRegister() {
     const [registeredServiceHash, setRegisteredServiceHash] = useState("");
 
     const { context} = useContext(Context);
-
     const { enqueue } = useSnackbar();
+    const EventServiceRegistered = ["event ServiceRegistered(address proposer, uint256 blockNumber, uint256 version, bytes32 serviceHash)"];
+    const iface = new ethers.utils.Interface(EventServiceRegistered);
 
     const getDecimal = async (tokenAddress) => {
         const contract = new ethers.Contract(
@@ -45,29 +46,29 @@ function ServiceRegister() {
             const formattedTokenAddress = ethers.utils.getAddress(tokenAddress);
             const formattedTokenAmount = ethers.utils.parseUnits(tokenAmount, await getDecimal(formattedTokenAddress));
 
-            const estimatedGasLimit = await context.contract.estimateGas.registerService(
-                formattedReceiver,
-                formattedTokenAddress,
-                formattedTokenAmount
-            );
-            const estimatedGasPrice = await context.provider.getGasPrice();
-
-            const registerTx = await context.contract.registerService(
+            const provider = await context.biconomy.provider;
+            let { data } = await context.biconomyContract.populateTransaction.registerService(
                 formattedReceiver,
                 formattedTokenAddress,
                 formattedTokenAmount,
-                {
-                    gasLimit: estimatedGasLimit.mul(2),
-                    gasPrice: estimatedGasPrice,
-                }
             );
-            const registerReceipt = await registerTx.wait();
-            for (const event of registerReceipt.events) {
-                if (event.event === "ServiceRegistered") {
-                    setRegisteredServiceHash(event.args.serviceHash)
+            let txParams = {
+                data: data,
+                to: context.biconomyContract.address,
+                from: context.walletAddress,
+                signatureType: "EIP712_SIGN",
+            };
+            await provider.send("eth_sendTransaction", [txParams]);
+            context.biconomy.on("txMined", (data) => {
+                const registerReceipt = data.receipt;
+                for (const log of registerReceipt.logs) {
+                    const event = iface.parseLog(log);
+                    if (event.eventFragment.name === "ServiceRegistered") {
+                        setRegisteredServiceHash(event.args.serviceHash)
+                    }
                 }
-            }
-            setRegistering(false);
+                setRegistering(false);
+            });
         } catch (e) {
             console.log(e);
             enqueue({
@@ -80,7 +81,7 @@ function ServiceRegister() {
 
     return (
         <HeadingLevel>
-            <Heading>Register Your Service</Heading>
+            <Heading>Register Your Service [Gasless by Biconomy]</Heading>
             <ParagraphSmall>Here by providing the following parameters, you can register your own service to the contract. Regarding to the token address field, you can, for example, input 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee if your service want to take BUSD (BSC Testnet). You can fund your subscriber with some test BUSD or other tokens at https://testnet.binance.org/faucet-smart.</ParagraphSmall>
             <Input
                 value={receiver}

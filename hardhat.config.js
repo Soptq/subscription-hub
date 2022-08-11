@@ -32,14 +32,14 @@ module.exports = {
       initialBaseFeePerGas: 0
     },
     testnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      url: "https://data-seed-prebsc-2-s1.binance.org:8545/",
       chainId: 97,
       gasPrice: 20000000000,
       // accounts: [deployKey] // this is a test account, do NOT save funds in this account!
     },
   },
   solidity: {
-    version: "0.8.4",
+    version: "0.8.9",
     optimizer: {
       enabled: true,
       runs: 200,
