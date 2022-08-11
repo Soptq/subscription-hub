@@ -14,9 +14,10 @@ async function main() {
   // await hre.run('compile');
 
   // We get the contract to deploy
+  const trustedForwarder = "0x61456BF1715C1415730076BB79ae118E806E74d2";
   const Contract = await hre.ethers.getContractFactory("SubscriptionHub");
-  // 0xf8cE8305960121b6507857f9969B430Aaa7cdCF4 deployed on bsc testnet
-  const contract = await Contract.deploy(25, 100, 10, 10); // 25% fee, 5 minutes interval (BSC Testnet).
+  // 0x1343c4067081FFeCe94519aFDe9EA82fb260B381 deployed on bsc testnet
+  const contract = await Contract.deploy(25, 100, 10, 10, trustedForwarder); // 25% fee, 5 minutes interval (BSC Testnet).
 
   await contract.deployed();
 

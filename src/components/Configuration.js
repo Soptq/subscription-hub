@@ -11,7 +11,9 @@ import { Input, SIZE } from "baseui/input";
 
 import { Context } from "../Context";
 
-import { ethers, providers, Contract } from "ethers"
+import { ethers, providers } from "ethers"
+import { Biconomy } from "@biconomy/mexa"
+
 import SubscriptionHubABI from "../artifacts/contracts/SubscriptionHub.sol/SubscriptionHub.json";
 
 function Configuration(props) {
@@ -19,7 +21,7 @@ function Configuration(props) {
 
     const [configurationStep, setConfigurationStep] = useState(context.configured ? 2 : 0);
     const [connecting, setConnecting] = useState(false);
-    const [contractAddress, setContractAddress] = useState("0x6fF7C7AA3E61Cc657BF996a0F68aA53736F0eBc4");
+    const [contractAddress, setContractAddress] = useState("0x1343c4067081FFeCe94519aFDe9EA82fb260B381");
     const [confirming, setconfirming] = useState(false);
 
     const { enqueue } = useSnackbar();
@@ -47,10 +49,19 @@ function Configuration(props) {
         const _provider = new providers.Web3Provider(window.ethereum);
         await _provider._ready();
         const address = await _provider.getSigner().getAddress();
+
+        const biconomy = new Biconomy(window.ethereum, {
+            apiKey: process.env.REACT_APP_BICONOMY_API_KEY,
+            debug: false,
+            contractAddresses: ["0x1343c4067081FFeCe94519aFDe9EA82fb260B381"],
+        });
+        await biconomy.init();
+
         const updatedContext = context;
         updatedContext.connected = true;
         updatedContext.walletAddress = address;
         updatedContext.provider = _provider;
+        updatedContext.biconomy = biconomy;
         setContext(updatedContext);
         setConnecting(false);
         enqueue({
@@ -71,7 +82,8 @@ function Configuration(props) {
             setconfirming(false);
             return;
         }
-        const contract = new Contract(formattedAddress, SubscriptionHubABI.abi, context.provider.getSigner());
+        const contract = new ethers.Contract(formattedAddress, SubscriptionHubABI.abi, context.provider.getSigner());
+        const biconomyContract = new ethers.Contract(formattedAddress, SubscriptionHubABI.abi, context.biconomy.ethersProvider);
         try {
             const identifier = await contract.getIdentifier();
             if (identifier !== "SubscriptionHub") {
@@ -88,6 +100,7 @@ function Configuration(props) {
 
         const updatedContext = context;
         updatedContext.contract = contract;
+        updatedContext.biconomyContract = biconomyContract;
         setContext(updatedContext)
         setconfirming(false);
     }
@@ -145,7 +158,7 @@ function Configuration(props) {
                 </Step>
                 <Step title="Input Deployed SubscriptionHub Contract Address">
                     <ParagraphMedium>
-                        Here please input the deployed SubscriptionHub contract address. For demonstration, we have a pre-deployed SubscriptionHub contract on BSC Testnet for you: <strong>0x6fF7C7AA3E61Cc657BF996a0F68aA53736F0eBc4</strong>. This hub is configured to have 25% fee percentage, 5 minutes interval (So every subscriber will be charged every 5 minutes, traditionally this is usually set to 1 month). Note that in production we will have multiple contracts with different intervals deployed for more use cases (i.e. 1 month, 3 month, 6 month, 1 year, etc.)
+                        Here please input the deployed SubscriptionHub contract address. For demonstration, we have a pre-deployed SubscriptionHub contract on BSC Testnet for you: <strong>0x1343c4067081FFeCe94519aFDe9EA82fb260B381</strong>. This hub is configured to have 25% fee percentage, 5 minutes interval (So every subscriber will be charged every 5 minutes, traditionally this is usually set to 1 month). Note that in production we will have multiple contracts with different intervals deployed for more use cases (i.e. 1 month, 3 month, 6 month, 1 year, etc.)
                     </ParagraphMedium>
                     <Input
                         value={contractAddress}
